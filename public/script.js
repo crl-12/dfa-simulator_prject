@@ -402,3 +402,76 @@ function deriveString(grammar, input) {
       while (i < newTail.length && isTerminal(newTail[i])) {
         if (newTail[i] === "") { i++; continue; }
         if (c >= input.length || newTail[i] !== input[c]) { ok = false; break; }
+        newPrefix.push(newTail[i]); c++; i++;
+      }
+      if (!ok) continue;
+      const newRemaining = newTail.slice(i);
+      trace.push([...newPrefix, ...newRemaining]);
+      if (expand(newPrefix, newRemaining, c)) return true;
+      trace.pop();
+    }
+    return false;
+  }
+
+  trace.push([grammar.start]);
+  return expand([], [grammar.start], 0) ? trace : null;
+}
+
+function renderDerivation(input) {
+  if (!alphabetRegex().test(input)) {
+    derivTrace.className = "derivation-trace fail";
+    derivTrace.textContent = `Invalid input — use only ${DFA.alphabet.join(" and ")}.`;
+    return;
+  }
+
+  const result = runDFA(input);
+  if (!result.accepted) {
+    derivTrace.className = "derivation-trace fail";
+    derivTrace.innerHTML = `<div>✗ String <b>"${input || "ε"}"</b> is rejected by the DFA.</div>` +
+      `<div style="margin-top:8px; color:var(--dim); font-style:italic">No derivation exists in this grammar.</div>`;
+    return;
+  }
+
+  const trace = deriveString(DFA.grammar, input);
+  if (!trace) {
+    derivTrace.className = "derivation-trace fail";
+    derivTrace.textContent = "Derivation search failed.";
+    return;
+  }
+
+  derivTrace.className = "derivation-trace success";
+  derivTrace.innerHTML = "";
+  trace.forEach((form, idx) => {
+    const row = document.createElement("div");
+    row.className = "step" + (idx === trace.length - 1 ? " final" : "");
+    const num = `<span class="step-num">${idx}</span>`;
+    const arrow = idx === 0 ? "" : `<span class="arrow-d">⇒</span>`;
+    let body = "";
+    if (form.length === 0) {
+      body = `<span class="epsilon">ε</span>`;
+    } else {
+      for (const tok of form) {
+        if (tok === "") body += `<span class="epsilon">ε</span>`;
+        else if (/[A-Z]/.test(tok)) body += `<span class="nonterm">${tok}</span>`;
+        else body += `<span class="terminal">${tok}</span>`;
+      }
+    }
+    row.innerHTML = num + arrow + body;
+    derivTrace.appendChild(row);
+  });
+}
+
+derivBtn.onclick = () => renderDerivation(derivInput.value);
+derivInput.addEventListener("keydown", (e) => { if (e.key === "Enter") renderDerivation(derivInput.value); });
+
+document.getElementById("validate").onclick = validateInstant;
+document.getElementById("simulate").onclick = startAnimated;
+document.getElementById("step").onclick = stepOnce;
+document.getElementById("reset").onclick = reset;
+inputEl.addEventListener("input", () => {
+  if (sim) reset();
+  else renderTape(inputEl.value, 0, false);
+});
+switchBtn.onclick = toggleDFA;
+
+loadDFA("dfa1");
