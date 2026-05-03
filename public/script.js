@@ -228,8 +228,9 @@ function alphabetRegex() {
 }
 
 function reset() {
-  if (sim?.timer) clearTimeout(sim.timer);
+  if (sim?.timer) { clearTimeout(sim.timer); }
   sim = null;
+  inputEl.value = "";
   for (const k in nodeEls) nodeEls[k].classList.remove("active");
   for (const e of edgeMap.values()) {
     e.path.classList.remove("active");
@@ -237,7 +238,7 @@ function reset() {
     e.path.setAttribute("marker-end", "url(#arr)");
   }
   highlightState(DFA.start);
-  renderTape(inputEl.value, 0, false);
+  renderTape("", 0, false);
   setStatus("", "Idle");
 }
 
@@ -247,7 +248,13 @@ function startAnimated() {
     setStatus("reject", `Invalid input — use only ${DFA.alphabet.join(" and ")}`);
     return;
   }
-  reset();
+  if (sim?.timer) clearTimeout(sim.timer);
+  for (const k in nodeEls) nodeEls[k].classList.remove("active");
+  for (const e of edgeMap.values()) {
+    e.path.classList.remove("active");
+    e.label.classList.remove("active");
+    e.path.setAttribute("marker-end", "url(#arr)");
+  }
   const result = runDFA(s);
   sim = {input: s, pos: 0, result};
   setStatus("running", s.length === 0 ? "Empty string" : "Running...");
@@ -285,31 +292,19 @@ function validateInstant() {
     setStatus("reject", `Invalid input — use only ${DFA.alphabet.join(" and ")}`);
     return;
   }
-  reset();
+  if (sim?.timer) clearTimeout(sim.timer);
+  sim = null;
+  for (const k in nodeEls) nodeEls[k].classList.remove("active");
+  for (const e of edgeMap.values()) {
+    e.path.classList.remove("active");
+    e.label.classList.remove("active");
+    e.path.setAttribute("marker-end", "url(#arr)");
+  }
   const result = runDFA(s);
   highlightState(result.final);
   renderTape(s, s.length, false);
   if (result.accepted) setStatus("accept", `✓ Accepted — ended in ${result.final}`);
   else setStatus("reject", `✗ Rejected — ended in ${result.final}`);
-}
-
-function stepOnce() {
-  const s = inputEl.value;
-  if (!alphabetRegex().test(s)) { setStatus("reject", "Invalid input"); return; }
-  if (!sim) {
-    sim = {input: s, pos: 0, result: runDFA(s)};
-    setStatus("running","Stepping");
-    highlightState(DFA.start);
-    renderTape(s, 0, true);
-    return;
-  }
-  if (sim.pos >= sim.input.length) return;
-  const step = sim.result.trace[sim.pos];
-  highlightEdge(step.from, step.to);
-  highlightState(step.to);
-  sim.pos++;
-  renderTape(sim.input, sim.pos, sim.pos < sim.input.length);
-  if (sim.pos >= sim.input.length) finishSim();
 }
 
 function loadDFA(key) {
@@ -340,7 +335,8 @@ function toggleDFA() {
   loadDFA(currentKey === "dfa1" ? "dfa2" : "dfa1");
 }
 
-const modal = document.getElementById("cfg-modal");
+const cfgModal = document.getElementById("cfg-modal");
+const devsModal = document.getElementById("devs-modal");
 const grammarRulesEl = document.getElementById("grammar-rules");
 const grammarNoteEl = document.getElementById("grammar-note");
 const derivInput = document.getElementById("deriv-input");
@@ -371,17 +367,27 @@ function formatRhs(rhs) {
   return out;
 }
 
-function openModal() {
+function openCfgModal() {
   renderGrammarModal();
-  modal.classList.add("open");
+  cfgModal.classList.add("open");
   if (inputEl.value) derivInput.value = inputEl.value;
 }
-function closeModal() { modal.classList.remove("open"); }
+function closeCfgModal() { cfgModal.classList.remove("open"); }
 
-document.getElementById("show-cfg").onclick = openModal;
-document.getElementById("modal-close").onclick = closeModal;
-modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+function openDevsModal() { devsModal.classList.add("open"); }
+function closeDevsModal() { devsModal.classList.remove("open"); }
+
+document.getElementById("show-cfg").onclick = openCfgModal;
+document.getElementById("modal-close").onclick = closeCfgModal;
+cfgModal.addEventListener("click", (e) => { if (e.target === cfgModal) closeCfgModal(); });
+
+document.getElementById("show-devs").onclick = openDevsModal;
+document.getElementById("devs-close").onclick = closeDevsModal;
+devsModal.addEventListener("click", (e) => { if (e.target === devsModal) closeDevsModal(); });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeCfgModal(); closeDevsModal(); }
+});
 
 function isTerminal(tok) { return tok === "" || /^[a-z0-9]$/.test(tok); }
 
@@ -466,11 +472,21 @@ derivInput.addEventListener("keydown", (e) => { if (e.key === "Enter") renderDer
 
 document.getElementById("validate").onclick = validateInstant;
 document.getElementById("simulate").onclick = startAnimated;
-document.getElementById("step").onclick = stepOnce;
 document.getElementById("reset").onclick = reset;
 inputEl.addEventListener("input", () => {
-  if (sim) reset();
-  else renderTape(inputEl.value, 0, false);
+  if (sim) {
+    if (sim.timer) clearTimeout(sim.timer);
+    sim = null;
+    for (const k in nodeEls) nodeEls[k].classList.remove("active");
+    for (const e of edgeMap.values()) {
+      e.path.classList.remove("active");
+      e.label.classList.remove("active");
+      e.path.setAttribute("marker-end", "url(#arr)");
+    }
+    highlightState(DFA.start);
+    setStatus("", "Idle");
+  }
+  renderTape(inputEl.value, 0, false);
 });
 switchBtn.onclick = toggleDFA;
 
