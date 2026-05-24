@@ -3,53 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Automata Simulator</title>
+<title>DFA Simulator</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
   <header>
-    <h1>Automata Simulator</h1>
+    <h1>DFA Simulator</h1>
     <div class="regex" id="regex"></div>
     <div class="alphabet" id="alphabet"></div>
   </header>
 
-  <div class="panel-label">Input String</div>
+  <div class="panel-label">Input Strings</div>
+  <div class="input-rows" id="input-rows"></div>
   <div class="controls">
-    <input id="input" type="text" maxlength="500" autocomplete="off" spellcheck="false">
-    <button id="validate">Validate</button>
-    <button id="simulate" class="primary">Simulate ▶</button>
+    <button id="add-row">+ Add String</button>
+    <button id="run-all" class="primary">Run All ▶</button>
     <button id="reset">Reset ↺</button>
   </div>
   <div class="examples" id="examples"></div>
 
-  <div style="margin-top:16px" class="tape" id="tape"></div>
+  <div class="results-wrap" id="results-wrap" style="display:none">
+    <div class="panel-label" style="margin-top:18px">Results</div>
+    <table class="results-table" id="results-table">
+      <thead>
+        <tr><th>#</th><th>String</th><th>DFA</th><th>CFG</th><th>Final</th><th></th></tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <div class="panel-label" style="margin-top:18px">Active Simulation</div>
+  <div class="tape" id="tape"></div>
 
   <div class="panel-label" style="margin-top:18px">State Diagram</div>
   <div class="diagram-wrap">
-    <svg id="diagram" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="diagram" class="diagram-svg" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
   <div class="status" id="status">Idle</div>
 
   <div class="footer-controls">
     <button id="show-cfg">Show CFG ⌘</button>
+    <button id="show-pda">Show PDA ☰</button>
     <button id="switch">Switch RegEx ⇄</button>
     <button id="show-devs">Developers ⓘ</button>
   </div>
 </main>
 
+<!-- CFG modal -->
 <div class="modal-backdrop" id="cfg-modal">
-  <div class="modal" role="dialog" aria-labelledby="modal-title">
+  <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-title">Context-Free Grammar</div>
-      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+      <div class="modal-title">Context-Free Grammar</div>
+      <button class="modal-close" id="cfg-close">✕</button>
     </div>
     <div class="modal-body">
       <div class="panel-label" style="margin-bottom:8px">Productions</div>
       <div class="grammar-rules" id="grammar-rules"></div>
       <div class="grammar-note" id="grammar-note"></div>
-
       <div class="derivation-section">
         <h3>Derive a String</h3>
         <div class="derivation-input">
@@ -64,35 +76,58 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="devs-modal">
-  <div class="modal" role="dialog" aria-labelledby="devs-title">
+<!-- PDA modal -->
+<div class="modal-backdrop" id="pda-modal">
+  <div class="modal wide">
     <div class="modal-header">
-      <div class="modal-title" id="devs-title">Developers</div>
-      <button class="modal-close" id="devs-close" aria-label="Close">✕</button>
+      <div class="modal-title">Pushdown Automaton</div>
+      <button class="modal-close" id="pda-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="panel-label" id="pda-label" style="margin-bottom:10px">PDA Diagram &amp; Stack</div>
+      <div class="pda-layout">
+        <div class="pda-diagram-wrap">
+          <svg id="pda-diagram" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="stack-panel">
+          <div class="stack-label">Stack ↑ Top</div>
+          <div class="stack-tower" id="stack-tower"></div>
+        </div>
+      </div>
+
+      <div class="pda-input-row">
+        <input id="pda-input" type="text" placeholder="enter a string to simulate on the PDA" autocomplete="off" spellcheck="false">
+        <button id="pda-run" class="primary">Run ▶</button>
+        <button id="pda-reset">Reset ↺</button>
+      </div>
+      <div class="pda-tape" id="pda-tape"></div>
+      <div class="pda-status" id="pda-status">Idle</div>
+
+      <div class="panel-label" style="margin-top:16px; margin-bottom:8px">Step Trace</div>
+      <div class="pda-trace" id="pda-trace">
+        <span style="color:var(--dim); font-style:italic">run a string to see each step</span>
+      </div>
+
+      <div class="stack-legend" id="stack-legend"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Developers modal -->
+<div class="modal-backdrop" id="devs-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Developers</div>
+      <button class="modal-close" id="devs-close">✕</button>
     </div>
     <div class="modal-body">
       <div class="panel-label" style="margin-bottom:12px">Built by</div>
       <ul class="devs-list">
-        <li>
-          <span class="dev-name">Aloysius Dulay </span>
-          <span class="dev-role">siguro dito rolee </span>
-        </li>
-        <li>
-          <span class="dev-name">Aaron Meneses</span>
-          <span class="dev-role">rolee</span>
-        </li>
-        <li>
-          <span class="dev-name">Jaisen Baloy</span>
-          <span class="dev-role">role</span>
-        </li>
-         <li>
-          <span class="dev-name">Carl Binanitan</span>
-          <span class="dev-role">role</span>
-        </li>
+        <li><span class="dev-name">Developer One</span><span class="dev-role">Lead · Backend</span></li>
+        <li><span class="dev-name">Developer Two</span><span class="dev-role">Frontend · Design</span></li>
+        <li><span class="dev-name">Developer Three</span><span class="dev-role">Logic · Testing</span></li>
       </ul>
-      <div class="grammar-note" style="margin-top:18px">
-        Automata Project: BCS35
-      </div>
+      <div class="grammar-note" style="margin-top:18px">Course project · Theory of Computation</div>
     </div>
   </div>
 </div>
