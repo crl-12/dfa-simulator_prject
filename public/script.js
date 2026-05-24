@@ -1,4 +1,4 @@
-// ───────────────────────── DFA / CFG / PDA configs ─────────────────────────
+
 const DFAS = {
   dfa1: {
     label: "DFA 1: aba/bab",
@@ -1088,3 +1088,17 @@ document.getElementById("reset").onclick = reset;
 switchBtn.onclick = toggleDFA;
 
 loadDFA("dfa1");
+
+// ───────────────────────── Theme toggle ─────────────────────────
+const themeToggle = document.getElementById("theme-toggle");
+function applyTheme(theme) {
+  document.body.setAttribute("data-theme", theme);
+  if (themeToggle) themeToggle.textContent = theme === "light" ? "☀️ Light" : "🌙 Dark";
+}
+if (themeToggle) {
+  themeToggle.onclick = () => {
+    const current = document.body.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  };
+}
+applyTheme("dark");
