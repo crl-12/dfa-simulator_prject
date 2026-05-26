@@ -4,10 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Automata Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<button class="theme-toggle" id="theme-toggle">🌙 Dark</button>
+<button class="theme-toggle" id="theme-toggle">Dark</button>
 <main>
   <header>
     <h1>Automata Simulation</h1>
@@ -28,7 +31,7 @@
     <div class="panel-label" style="margin-top:18px">Results</div>
     <table class="results-table" id="results-table">
       <thead>
-        <tr><th>#</th><th>String</th><th>DFA</th><th>CFG</th><th>Final</th><th></th></tr>
+        <tr><th>#</th><th>String</th><th>DFA</th><th>CFG</th><th>PDA</th><th>Final</th><th></th></tr>
       </thead>
       <tbody id="results-body"></tbody>
     </table>
@@ -85,15 +88,9 @@
       <button class="modal-close" id="pda-close">✕</button>
     </div>
     <div class="modal-body">
-      <div class="panel-label" id="pda-label" style="margin-bottom:10px">PDA Diagram &amp; Stack</div>
-      <div class="pda-layout">
-        <div class="pda-diagram-wrap">
-          <svg id="pda-diagram" preserveAspectRatio="xMidYMid meet"></svg>
-        </div>
-        <div class="stack-panel">
-          <div class="stack-label">Stack ↑ Top</div>
-          <div class="stack-tower" id="stack-tower"></div>
-        </div>
+      <div class="panel-label" id="pda-label" style="margin-bottom:10px">PDA Flowchart</div>
+      <div class="pda-diagram-wrap">
+        <svg id="pda-diagram" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
 
       <div class="pda-input-row">
@@ -129,7 +126,6 @@
         <li><span class="dev-name">Carl Binanitan</span><span class="dev-role">Developer</span></li>
         <li><span class="dev-name">Jaisen Baloy</span><span class="dev-role">Developer</span></li>
       </ul>
-      <div class="grammar-note" style="margin-top:18px">Course project · Theory of Computation</div>
     </div>
   </div>
 </div>
