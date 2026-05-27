@@ -27,18 +27,18 @@ const DFAS = {
     grammar: {
       start: "S",
       rules: {
-        S: [["a","b","a","X"], ["b","a","b","X"]],
-        X: [["b","a","b","Y"], ["a","X"], ["b","X"]],
-        Y: [["a","Z"], ["b","Z"]],
-        Z: [["a","a","Z"], ["a","Z"], ["b","Z"], []],
+        S: [["a","b","a","A"], ["b","a","b","A"]],
+        A: [["a","A"], ["b","A"], ["b","a","b","B"]],
+        B: [["a","C"], ["b","C"], ["a","b","C"], ["b","a","C"]],
+        C: [["a","C"], ["b","C"], []]
       },
       display: [
-        { lhs: "S", rhs: ["abaX", "babX"] },
-        { lhs: "X", rhs: ["aX", "bX", "babY"] },
-        { lhs: "Y", rhs: ["aZ", "bZ"] },
-        { lhs: "Z", rhs: ["aZ", "bZ", "aaZ", "ε"] },
+        { lhs: "S", rhs: ["abaA","babA"] },
+        { lhs: "A", rhs: ["aA","bA","babB"] },
+        { lhs: "B", rhs: ["aC","bC","abC","baC"] },
+        { lhs: "C", rhs: ["aC","bC","λ"] }
       ],
-      note: "ε denotes the empty string. Capital letters are non-terminals; lowercase are terminals.",
+      note: "λ denotes the empty string. Capital letters are non-terminals; lowercase are terminals."
     },
     pda: {
       states: ["q0","q1","q2","q3","q4","q5","q6","q7","q8","q9","T"],
