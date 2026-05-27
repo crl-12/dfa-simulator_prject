@@ -902,9 +902,49 @@ function drawPdaFlowchart() {
     p.setAttribute("d","M0,0 L10,5 L0,10 z"); p.setAttribute("fill", color);
     m.appendChild(p); defs.appendChild(m);
   }
-
+  const backEdgeRight = new Set();
+  for (const e of fc.edges) {
+    if (e.from === e.to) continue;
+    const f = fc.nodes[e.from], t = fc.nodes[e.to];
+    if (f && t && f.type === "diamond" && t.type === "diamond" && t.y < f.y - 2) {
+      const lo = Math.min(t.y, f.y), hi = Math.max(t.y, f.y);
+      const bx = Math.max(f.x, t.x);
+      for (const k in fc.nodes) {
+        const n = fc.nodes[k];
+        if (n.type !== "diamond") continue;
+        if (n.y > lo - 2 && n.y < hi + 2 && Math.abs(n.x - bx) < n.w) backEdgeRight.add(k);
+      }
+    }
+  }
   for (const e of fc.edges) {
     const from = fc.nodes[e.from], to = fc.nodes[e.to];
+    if (e.from === e.to) {
+      const n = from, ry = n.y;
+      const onLeft = backEdgeRight.has(e.from);
+      const out = 38, up = n.h * 0.32;
+      const lp = document.createElementNS(NS, "path");
+      if (onLeft) {
+        const lx0 = n.x - n.w / 2;
+        lp.setAttribute("d", `M ${lx0 + 6},${ry - up} L ${lx0 - out},${ry - up} L ${lx0 - out},${ry + up} L ${lx0 + 6},${ry + up}`);
+      } else {
+        const rx = n.x + n.w / 2;
+        lp.setAttribute("d", `M ${rx - 6},${ry - up} L ${rx + out},${ry - up} L ${rx + out},${ry + up} L ${rx - 6},${ry + up}`);
+      }
+      lp.setAttribute("class", "fc-edge");
+      lp.setAttribute("fill", "none");
+      lp.setAttribute("marker-end", "url(#fc-arr)");
+      pdaSvg.appendChild(lp);
+      if (e.label) {
+        const txt = document.createElementNS(NS, "text");
+        const tx = onLeft ? (n.x - n.w / 2 - out - 16) : (n.x + n.w / 2 + out + 16);
+        txt.setAttribute("x", tx); txt.setAttribute("y", ry + 4);
+        txt.setAttribute("class", "fc-edge-label");
+        txt.textContent = e.label;
+        pdaSvg.appendChild(txt);
+      }
+      pdaFlowEdges.set(`${e.from}->${e.to}`, { path: lp });
+      continue;
+    }
     const a = anchorPoint(from, e.fromSide);
     const b = anchorPoint(to, e.toSide);
     const path = document.createElementNS(NS, "path");
