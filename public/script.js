@@ -217,7 +217,9 @@ function drawDiagram(targetSvg, cfg, options = {}) {
         const cx=mx+nx*off, cy=my+ny*off;
         path.setAttribute("d", `M ${p1.x},${p1.y} Q ${cx},${cy} ${p2.x},${p2.y}`);
         label = document.createElementNS(SVG_NS, "text");
-        label.setAttribute("x", cx+nx*8); label.setAttribute("y", cy+ny*8);
+        const apexX = 0.25*p1.x + 0.5*cx + 0.25*p2.x;
+        const apexY = 0.25*p1.y + 0.5*cy + 0.25*p2.y;
+        label.setAttribute("x", apexX); label.setAttribute("y", apexY + (ny>0 ? 14 : -6));
         label.setAttribute("class","edge-label" + (options.pda ? " pda-edge-label" : ""));
       } else {
         path.setAttribute("d", `M ${p1.x},${p1.y} L ${p2.x},${p2.y}`);
