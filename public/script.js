@@ -96,9 +96,9 @@ const DFAS = {
       display: [
         { lhs: "S", rhs: ["1X", "0X"] },
         { lhs: "X", rhs: ["1X", "0X", "111Y", "000Y", "101Y"] },
-        { lhs: "Y", rhs: ["1Y", "0Y", "ε"] },
+        { lhs: "Y", rhs: ["1Y", "0Y", "λ"] },
       ],
-      note: "ε denotes the empty string. Note: Y → 0Y is adjusted from the original Y → 0X so the grammar derives every string the regex accepts.",
+      note: "λ denotes the empty string. Note: Y → 0Y is adjusted from the original Y → 0X so the grammar derives every string the regex accepts.",
     },
     pda: {
       states: ["q1","q2","q3","q4","q5","q6","q7","q8","T"],
