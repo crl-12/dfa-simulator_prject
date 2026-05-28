@@ -210,21 +210,14 @@ function drawDiagram(targetSvg, cfg, options = {}) {
       const p2 = pointOnCircle(b.x,b.y,a.x,a.y,R);
       const reverse = reverseSet.has(`${e.from}->${e.to}`);
       path = document.createElementNS(SVG_NS, "path");
-       const fromN = parseInt(String(e.from).replace(/\D/g,""));
-      const toN = parseInt(String(e.to).replace(/\D/g,""));
-      const longBack = !reverse && !isNaN(fromN) && !isNaN(toN) && (fromN - toN) >= 2;
-      if (reverse || longBack) {
+      if (reverse) {
         const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
         const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
-        let nx=-dy/len, ny=dx/len;
-        const off = longBack ? 110 : 22;
-        if (longBack && ny < 0) { nx = -nx; ny = -ny; }
+        const nx=-dy/len, ny=dx/len, off=22;
         const cx=mx+nx*off, cy=my+ny*off;
         path.setAttribute("d", `M ${p1.x},${p1.y} Q ${cx},${cy} ${p2.x},${p2.y}`);
         label = document.createElementNS(SVG_NS, "text");
-        const apexX = 0.25*p1.x + 0.5*cx + 0.25*p2.x;
-        const apexY = 0.25*p1.y + 0.5*cy + 0.25*p2.y;
-        label.setAttribute("x", apexX); label.setAttribute("y", apexY + (ny>0 ? 14 : -6));
+        label.setAttribute("x", cx+nx*8); label.setAttribute("y", cy+ny*8);
         label.setAttribute("class","edge-label" + (options.pda ? " pda-edge-label" : ""));
       } else {
         path.setAttribute("d", `M ${p1.x},${p1.y} L ${p2.x},${p2.y}`);
@@ -234,6 +227,14 @@ function drawDiagram(targetSvg, cfg, options = {}) {
         label.setAttribute("x", mx-dy/len*12); label.setAttribute("y", my+dx/len*12);
         label.setAttribute("class","edge-label" + (options.pda ? " pda-edge-label" : ""));
       }
+      path.setAttribute("class","edge");
+      path.setAttribute("marker-end", `url(#arr-${options.id})`);
+      targetSvg.appendChild(path);
+    }
+    label.textContent = e.labels.join(options.pda ? "  " : ",");
+    targetSvg.appendChild(label);
+    localEdges.set(`${e.from}->${e.to}`, {path, label});
+  }
 
   const sp = cfg.positions[cfg.start];
   const startPath = document.createElementNS(SVG_NS, "path");
