@@ -1,4 +1,4 @@
-
+// ───────────────────────── DFA / CFG / PDA configs ─────────────────────────
 const DFAS = {
   dfa1: {
     label: "DFA 1: aba/bab",
@@ -24,7 +24,7 @@ const DFAS = {
       q9:{x:1040,y:200}, T:{x:80,y:380},
     },
     viewBox: "0 0 1100 460",
-        grammar: {
+    grammar: {
       start: "S",
       rules: {
         S: [["a","b","a","W"], ["b","a","b","W"]],
@@ -40,7 +40,7 @@ const DFAS = {
         { lhs: "Y", rhs: ["aZ","bZ","abZ","baZ"] },
         { lhs: "Z", rhs: ["aZ","bZ","λ"] }
       ],
-      note: "λ denotes the empty string. Capital letters are non-terminals; lowercase are terminals."
+      note: "λ denotes the empty string. Capital letters are non-terminals; lowercase are terminals.",
     },
     pda: {
       states: ["q0","q1","q2","q3","q4","q5","q6","q7","q8","q9","T"],
@@ -60,6 +60,7 @@ const DFAS = {
         "q9|a|Δ":{next:"q9",op:"none"}, "q9|b|Δ":{next:"q9",op:"none"},
         "T|a|Δ":{next:"T",op:"none"}, "T|b|Δ":{next:"T",op:"none"},
       },
+      legend: "Read-only PDA. These languages are <b>regular</b>, so no stack is needed — the PDA simply READs each symbol and tracks progress in its state, accepting by final state. The stack holds only Δ and is never modified. (A stack would only be essential for a non-regular language such as aⁿbⁿ.)"
     },
   },
   dfa2: {
@@ -96,9 +97,9 @@ const DFAS = {
       display: [
         { lhs: "S", rhs: ["1X", "0X"] },
         { lhs: "X", rhs: ["1X", "0X", "111Y", "000Y", "101Y"] },
-        { lhs: "Y", rhs: ["1Y", "0Y", "λ"] },
+        { lhs: "Y", rhs: ["1Y", "0Y", "ε"] },
       ],
-      note: "λ denotes the empty string.Capital letters are non-terminals; lowercase are terminals.",
+      note: "ε denotes the empty string. Note: Y → 0Y is adjusted from the original Y → 0X so the grammar derives every string the regex accepts.",
     },
     pda: {
       states: ["q1","q2","q3","q4","q5","q6","q7","q8","T"],
@@ -116,6 +117,7 @@ const DFAS = {
         "q8|0|Δ":{next:"q8",op:"none"}, "q8|1|Δ":{next:"q8",op:"none"},
         "T|0|Δ":{next:"T",op:"none"}, "T|1|Δ":{next:"T",op:"none"},
       },
+      legend: "Read-only PDA. These languages are <b>regular</b>, so no stack is needed — the PDA simply READs each symbol and tracks progress in its state, accepting by final state. The stack holds only Δ and is never modified. (A stack would only be essential for a non-regular language such as aⁿbⁿ.)"
     },
   },
 };
@@ -209,15 +211,26 @@ function drawDiagram(targetSvg, cfg, options = {}) {
       const p1 = pointOnCircle(a.x,a.y,b.x,b.y,R);
       const p2 = pointOnCircle(b.x,b.y,a.x,a.y,R);
       const reverse = reverseSet.has(`${e.from}->${e.to}`);
+      // A "long back edge" goes from a later state back to an earlier one across a gap
+      // (e.g. q7 -> q5). Curve it strongly so it doesn't overlap forward edges in between.
+      const fromN = parseInt(String(e.from).replace(/\D/g,""));
+      const toN = parseInt(String(e.to).replace(/\D/g,""));
+      const longBack = !reverse && !isNaN(fromN) && !isNaN(toN) && (fromN - toN) >= 2;
       path = document.createElementNS(SVG_NS, "path");
-      if (reverse) {
+      if (reverse || longBack) {
         const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
         const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
-        const nx=-dy/len, ny=dx/len, off=22;
+        let nx=-dy/len, ny=dx/len;
+        const off = longBack ? 110 : 22;
+        // long back-edges always bow DOWNWARD (below the states) for clarity
+        if (longBack && ny < 0) { nx = -nx; ny = -ny; }
         const cx=mx+nx*off, cy=my+ny*off;
         path.setAttribute("d", `M ${p1.x},${p1.y} Q ${cx},${cy} ${p2.x},${p2.y}`);
         label = document.createElementNS(SVG_NS, "text");
-        label.setAttribute("x", cx+nx*8); label.setAttribute("y", cy+ny*8);
+        // place label right on the apex of the curve (the quadratic midpoint)
+        const apexX = 0.25*p1.x + 0.5*cx + 0.25*p2.x;
+        const apexY = 0.25*p1.y + 0.5*cy + 0.25*p2.y;
+        label.setAttribute("x", apexX); label.setAttribute("y", apexY + (ny>0 ? 14 : -6));
         label.setAttribute("class","edge-label" + (options.pda ? " pda-edge-label" : ""));
       } else {
         path.setAttribute("d", `M ${p1.x},${p1.y} L ${p2.x},${p2.y}`);
@@ -381,7 +394,7 @@ function getInputValues() {
 }
 
 // ───────────────────────── Batch run + results table ─────────────────────────
-function validate() {
+function runAll() {
   const values = getInputValues();
   const re = alphabetRegex();
   const results = values.map((s, idx) => {
@@ -680,7 +693,7 @@ let pdaSim = null;
 function renderPdaPanel() {
   buildFlowchartLayout();
   drawPdaFlowchart();
-  if (stackLegend) stackLegend.innerHTML = DFA.pda.legend || "";
+  if (stackLegend) stackLegend.innerHTML = DFA.pda.legend;
   resetPdaSim();
 }
 
@@ -904,6 +917,9 @@ function drawPdaFlowchart() {
     p.setAttribute("d","M0,0 L10,5 L0,10 z"); p.setAttribute("fill", color);
     m.appendChild(p); defs.appendChild(m);
   }
+
+  // Detect states with a back-edge curve on their right, so their self-loop
+  // can be placed on the LEFT to avoid overlapping that curve.
   const backEdgeRight = new Set();
   for (const e of fc.edges) {
     if (e.from === e.to) continue;
@@ -918,24 +934,29 @@ function drawPdaFlowchart() {
       }
     }
   }
+
   for (const e of fc.edges) {
     const from = fc.nodes[e.from], to = fc.nodes[e.to];
+
+    // SELF-LOOP: squared elbow loop; placed on the side clear of any back-edge curve
     if (e.from === e.to) {
       const n = from, ry = n.y;
       const onLeft = backEdgeRight.has(e.from);
       const out = 38, up = n.h * 0.32;
-      const lp = document.createElementNS(NS, "path");
+      const path = document.createElementNS(NS, "path");
       if (onLeft) {
         const lx0 = n.x - n.w / 2;
-        lp.setAttribute("d", `M ${lx0 + 6},${ry - up} L ${lx0 - out},${ry - up} L ${lx0 - out},${ry + up} L ${lx0 + 6},${ry + up}`);
+        path.setAttribute("d",
+          `M ${lx0 + 6},${ry - up} L ${lx0 - out},${ry - up} L ${lx0 - out},${ry + up} L ${lx0 + 6},${ry + up}`);
       } else {
         const rx = n.x + n.w / 2;
-        lp.setAttribute("d", `M ${rx - 6},${ry - up} L ${rx + out},${ry - up} L ${rx + out},${ry + up} L ${rx - 6},${ry + up}`);
+        path.setAttribute("d",
+          `M ${rx - 6},${ry - up} L ${rx + out},${ry - up} L ${rx + out},${ry + up} L ${rx - 6},${ry + up}`);
       }
-      lp.setAttribute("class", "fc-edge");
-      lp.setAttribute("fill", "none");
-      lp.setAttribute("marker-end", "url(#fc-arr)");
-      pdaSvg.appendChild(lp);
+      path.setAttribute("class", "fc-edge");
+      path.setAttribute("fill", "none");
+      path.setAttribute("marker-end", "url(#fc-arr)");
+      pdaSvg.appendChild(path);
       if (e.label) {
         const txt = document.createElementNS(NS, "text");
         const tx = onLeft ? (n.x - n.w / 2 - out - 16) : (n.x + n.w / 2 + out + 16);
@@ -944,9 +965,10 @@ function drawPdaFlowchart() {
         txt.textContent = e.label;
         pdaSvg.appendChild(txt);
       }
-      pdaFlowEdges.set(`${e.from}->${e.to}`, { path: lp });
+      pdaFlowEdges.set(`${e.from}->${e.to}`, { path });
       continue;
     }
+
     const a = anchorPoint(from, e.fromSide);
     const b = anchorPoint(to, e.toSide);
     const path = document.createElementNS(NS, "path");
@@ -1100,7 +1122,7 @@ function resetPdaSim() {
   if (pdaSim?.timer) clearTimeout(pdaSim.timer);
   pdaSim = null;
   pdaInput.value = "";
-  pdaHighlightState(DFA.pda.start);
+  pdaFlowHighlight(null);
   pdaHighlightEdge(null, null);
   renderStack([DFA.pda.startStack]);
   renderPdaTape("", 0, false);
@@ -1262,7 +1284,7 @@ function renderPdaTrace(result, currentIdx) {
                    : step.op === "pop" ? `, pop '${step.top}'` : "";
       row.innerHTML =
         `<span class="tnum">${i}</span>` +
-        `<span class="tmove">${step.from} —read '${step.sym}'${opText}→ ${tgt}</span>`;
+        `<span class="tmove">${step.from} —read '${step.sym}'${opText} → ${tgt}</span>`;
     }
     pdaTrace.appendChild(row);
   });
@@ -1274,7 +1296,7 @@ pdaInput.addEventListener("keydown", e => { if (e.key === "Enter") startPdaSim()
 
 // ───────────────────────── Wire up ─────────────────────────
 document.getElementById("add-row").onclick = () => makeInputRow("");
-document.getElementById("validate").onclick = validate;
+document.getElementById("run-all").onclick = runAll;
 document.getElementById("reset").onclick = reset;
 switchBtn.onclick = toggleDFA;
 
@@ -1284,7 +1306,7 @@ loadDFA("dfa1");
 const themeToggle = document.getElementById("theme-toggle");
 function applyTheme(theme) {
   document.body.setAttribute("data-theme", theme);
-  if (themeToggle) themeToggle.textContent = theme === "light" ? "Mode: Dark" : "Mode: Light";
+  if (themeToggle) themeToggle.textContent = theme === "light" ? "🌙 Dark" : "☀️ Light";
 }
 if (themeToggle) {
   themeToggle.onclick = () => {
